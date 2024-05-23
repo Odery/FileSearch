@@ -19,6 +19,9 @@ func DrawGUI() {
 	window.CenterOnScreen()
 	window.SetFixedSize(true)
 
+	// Declare URI variable
+	var workingDIR fyne.ListableURI
+
 	// Create a label to display the selected folder path
 	folderLabel := widget.NewLabel("!No folder selected!")
 
@@ -32,13 +35,14 @@ func DrawGUI() {
 				return
 			}
 			// Handle case where no folder was selected
-			if uri == nil {
+			if uri == nil && workingDIR == nil {
 				folderLabel.SetText("!No folder selected!")
 			}
 
 			// Update the label with the selected folder path
 			if uri != nil {
-				folderLabel.SetText("Робоча директорія: " + uri.Path())
+				workingDIR = uri
+				folderLabel.SetText("Робоча директорія: " + workingDIR.Path())
 			}
 		}, window).Show()
 	})
