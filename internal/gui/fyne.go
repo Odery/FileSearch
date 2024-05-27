@@ -6,9 +6,11 @@ import (
 	"fyne.io/fyne/v2/container"
 	"fyne.io/fyne/v2/dialog"
 	"fyne.io/fyne/v2/widget"
+	"github.com/Odery/FileSearch/internal/docx"
 	"log"
 )
 
+// customLayout struct to make a custom layout in Fyne
 type customLayout struct{}
 
 func (c *customLayout) MinSize(_ []fyne.CanvasObject) fyne.Size {
@@ -82,14 +84,20 @@ func DrawGUI() {
 
 	// Create search button
 	searchBtn := widget.NewButton("Шукати", func() {
-		log.Println(inputBox1.Text)
-		log.Println(inputBox2.Text)
+		//TODO make use of wg (wait group) to make a progressbar
+		result, _, err := docx.ProcessSearchRequest(workingDIR.Path(), inputBox1.Text, inputBox2.Text)
+		if err != nil {
+			log.Println("[ERROR]: ", err)
+		}
+
+		//TODO
+		result.Lock()
+		result.Unlock()
 	})
 
 	// Create a container to hold the button and label
-	layout := &customLayout{}
 	content := container.New(
-		layout,
+		new(customLayout),
 		openFolderButton,
 		folderLabel,
 		inputBox1,
