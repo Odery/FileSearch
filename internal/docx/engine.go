@@ -12,32 +12,9 @@ import (
 	"sync"
 )
 
-type SearchEntry struct {
-	SearchedString string
-	Path           string
-}
-
-type SearchResult struct {
-	sync.Mutex
-	Results []SearchEntry
-	Entries int
-}
-
-// AddEntry updates Search Result with the latest given entry
-// concurrency safe
-func (s *SearchResult) AddEntry(path, searchedString string) {
-	s.Lock()
-	s.Results = append(s.Results, SearchEntry{
-		SearchedString: searchedString,
-		Path:           path,
-	})
-	s.Entries += 1
-	s.Unlock()
-}
-
 // ProcessSearchRequest is the core function in the whole searching logic.
 func ProcessSearchRequest(path, query1, query2 string) (*SearchResult, *sync.WaitGroup, error) {
-	result := new(SearchResult)
+	result := NewSearchResult()
 	wg := new(sync.WaitGroup)
 	regex1, regex2, err := compileRegex(query1, query2)
 
@@ -65,10 +42,11 @@ func ProcessSearchRequest(path, query1, query2 string) (*SearchResult, *sync.Wai
 // If a match is found, it adds an entry to the search result. This function handles errors in opening,
 // reading, and parsing the file, and uses a wait group to manage overall app progress.
 func processFile(filepath string, regex1, regex2 *regexp.Regexp, result *SearchResult, wg *sync.WaitGroup) {
+	defer wg.Done()
+
 	readFile, err := os.Open(filepath)
 	if err != nil {
 		log.Println("[ERROR] Error opening a file ", filepath, ":", err)
-		wg.Done()
 		return
 	}
 	defer readFile.Close()
@@ -76,14 +54,12 @@ func processFile(filepath string, regex1, regex2 *regexp.Regexp, result *SearchR
 	fileInfo, err := readFile.Stat()
 	if err != nil {
 		log.Println("[ERROR] Error reading a file ", filepath, ":", err)
-		wg.Done()
 		return
 	}
 
 	doc, err := docx.Parse(readFile, fileInfo.Size())
 	if err != nil {
 		log.Println("[ERROR] Error parsing a file as DOC(X) ", filepath, ":", err)
-		wg.Done()
 		return
 	}
 
@@ -94,12 +70,11 @@ func processFile(filepath string, regex1, regex2 *regexp.Regexp, result *SearchR
 			text := fmt.Sprint(elem)
 			if (regex1Bool == true && regex2 == nil) || (regex1Bool == true && regex2Bool == true) {
 				result.AddEntry(filepath, text)
-				wg.Done()
 				return
 			}
 
 			if regex1Bool == false {
-				regex1Bool = regex2.MatchString(text)
+				regex1Bool = regex1.MatchString(text)
 			}
 			if regex2 != nil {
 				regex2Bool = regex2.MatchString(text)
