@@ -10,34 +10,6 @@ import (
 	"log"
 )
 
-// customLayout struct to make a custom layout in Fyne
-type customLayout struct{}
-
-func (c *customLayout) MinSize(_ []fyne.CanvasObject) fyne.Size {
-	return fyne.NewSize(1200, 600)
-}
-
-func (c *customLayout) Layout(elements []fyne.CanvasObject, _ fyne.Size) {
-	// openFolderButton
-	elements[0].Resize(fyne.NewSize(170, 36))
-	elements[0].Move(fyne.NewPos(10, 10))
-
-	// folder label
-	elements[1].Resize(fyne.NewSize(0, 0))
-	elements[1].Move(fyne.NewPos(185, 10))
-
-	// Input boxes
-	elements[2].Resize(fyne.NewSize(250, 36))
-	elements[2].Move(fyne.NewPos(575, 75))
-
-	elements[3].Resize(fyne.NewSize(250, 36))
-	elements[3].Move(fyne.NewPos(830, 75))
-
-	// Search button
-	elements[4].Resize(fyne.NewSize(100, 36))
-	elements[4].Move(fyne.NewPos(1090, 75))
-}
-
 func DrawGUI() {
 	// Create a new application
 	gui := app.New()
@@ -95,6 +67,16 @@ func DrawGUI() {
 		result.Unlock()
 	})
 
+	// Create list element
+	list := widget.NewList(
+		func() int {
+			return 20
+		}, func() fyne.CanvasObject {
+			return widget.NewLabel("42\nlolo")
+		}, func(id widget.ListItemID, object fyne.CanvasObject) {
+			object = widget.NewLabel("Here is a list number")
+		})
+
 	// Create a container to hold the button and label
 	content := container.New(
 		new(customLayout),
@@ -103,6 +85,7 @@ func DrawGUI() {
 		inputBox1,
 		inputBox2,
 		searchBtn,
+		list,
 	)
 
 	// Set the window content and show the window
