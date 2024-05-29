@@ -1,10 +1,15 @@
 package docx
 
-import "sync"
+import (
+	"sync"
+	"time"
+)
 
 type SearchEntry struct {
 	SearchedString string
 	Path           string
+	Name           string
+	LastModified   time.Time
 }
 
 type SearchResult struct {
@@ -22,9 +27,14 @@ func NewSearchResult() *SearchResult {
 
 // AddEntry updates Search Result with the latest given entry
 // concurrency safe
-func (s *SearchResult) AddEntry(path, searchedString string) {
+func (s *SearchResult) AddEntry(name, path, searchedString string, lastModified time.Time) {
 	s.Lock()
-	s.results[s.currentID] = SearchEntry{SearchedString: searchedString, Path: path}
+	s.results[s.currentID] = SearchEntry{
+		Name:           name,
+		Path:           path,
+		SearchedString: searchedString,
+		LastModified:   lastModified,
+	}
 	s.currentID += 1
 	s.Unlock()
 }

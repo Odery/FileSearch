@@ -69,7 +69,7 @@ func processFile(filepath string, regex1, regex2 *regexp.Regexp, result *SearchR
 		case *docx.Paragraph, *docx.Table:
 			text := fmt.Sprint(elem)
 			if (regex1Bool == true && regex2 == nil) || (regex1Bool == true && regex2Bool == true) {
-				result.AddEntry(filepath, text)
+				result.AddEntry(fileInfo.Name(), filepath, text, fileInfo.ModTime())
 				return
 			}
 
