@@ -66,3 +66,7 @@ func (t *TappableLabel) Tapped(_ *fyne.PointEvent) {
 }
 
 func (t *TappableLabel) TappedSecondary(*fyne.PointEvent) {}
+
+func (t *TappableLabel) MinSize() fyne.Size {
+	return fyne.NewSize(34, 34)
+}
