@@ -9,13 +9,12 @@ import (
 	"path/filepath"
 	"regexp"
 	"strings"
-	"sync"
 )
 
 // ProcessSearchRequest is the core function in the whole searching logic.
-func ProcessSearchRequest(path, query1, query2 string) (*SearchResult, *sync.WaitGroup, error) {
+func ProcessSearchRequest(path, query1, query2 string) (*SearchResult, *SearchProgress, error) {
 	result := NewSearchResult()
-	wg := new(sync.WaitGroup)
+	progress := new(SearchProgress)
 	regex1, regex2, err := compileRegex(query1, query2)
 
 	// Traverse path and subfolders to look for doc, docx files
@@ -25,8 +24,10 @@ func ProcessSearchRequest(path, query1, query2 string) (*SearchResult, *sync.Wai
 		}
 
 		if !d.IsDir() && (strings.HasSuffix(d.Name(), ".docx") || strings.HasSuffix(d.Name(), ".doc")) {
-			wg.Add(1)
-			go processFile(path, regex1, regex2, result, wg)
+			if !strings.HasPrefix(d.Name(), "~$") {
+				progress.Add()
+				go processFile(path, regex1, regex2, result, progress)
+			}
 		}
 
 		return nil
@@ -35,14 +36,14 @@ func ProcessSearchRequest(path, query1, query2 string) (*SearchResult, *sync.Wai
 		return nil, nil, err
 	}
 
-	return result, wg, err
+	return result, progress, err
 }
 
 // processFile processes a DOC(X) file, searching for text that matches the provided regular expressions.
 // If a match is found, it adds an entry to the search result. This function handles errors in opening,
 // reading, and parsing the file, and uses a wait group to manage overall app progress.
-func processFile(filepath string, regex1, regex2 *regexp.Regexp, result *SearchResult, wg *sync.WaitGroup) {
-	defer wg.Done()
+func processFile(filepath string, regex1, regex2 *regexp.Regexp, result *SearchResult, progress *SearchProgress) {
+	defer progress.Done()
 
 	readFile, err := os.Open(filepath)
 	if err != nil {
@@ -68,8 +69,9 @@ func processFile(filepath string, regex1, regex2 *regexp.Regexp, result *SearchR
 		switch elem := element.(type) {
 		case *docx.Paragraph, *docx.Table:
 			text := fmt.Sprint(elem)
-			if (regex1Bool == true && regex2 == nil) || (regex1Bool == true && regex2Bool == true) {
-				result.AddEntry(fileInfo.Name(), filepath, text, fileInfo.ModTime())
+			if regex1Bool && (regex2 == nil || regex2Bool) {
+				result.AddEntry(fileInfo.Name(), filepath, "text", fileInfo.ModTime())
+				log.Println("FOUND")
 				return
 			}
 
@@ -88,6 +90,10 @@ func processFile(filepath string, regex1, regex2 *regexp.Regexp, result *SearchR
 // If a second pattern is provided, it compiles a regular expression for it too.
 // Makes a case-insensitive regex
 func compileRegex(pattern1, pattern2 string) (*regexp.Regexp, *regexp.Regexp, error) {
+	// Input sanitization
+	pattern1 = regexp.QuoteMeta(pattern1)
+	pattern2 = regexp.QuoteMeta(pattern2)
+
 	if pattern1 == "" {
 		return nil, nil, fmt.Errorf("pattern is empty")
 	}
