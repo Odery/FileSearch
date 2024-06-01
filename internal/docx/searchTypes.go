@@ -1,16 +1,53 @@
 package docx
 
 import (
+	"log"
 	"sort"
 	"sync"
 	"time"
 )
+
+type SearchProgress struct {
+	done  int
+	total int
+}
+
+func (s *SearchProgress) IsDone() bool {
+	log.Printf("Done:%v , Total:%v ;\n", s.done, s.total)
+	log.Println(s.done == s.total)
+	if s.done == s.total {
+		return true
+	} else {
+		return false
+	}
+}
+
+func (s *SearchProgress) Done() {
+	s.done += 1
+}
+
+func (s *SearchProgress) Add() {
+	s.total += 1
+}
+
+func (s *SearchProgress) GetDone() int {
+	return s.done
+}
+
+// GetProgress will return a value from .0 to 1
+func (s *SearchProgress) GetProgress() float64 {
+	return float64(s.done) / float64(s.total)
+}
 
 type SearchEntry struct {
 	SearchedString string
 	Path           string
 	Name           string
 	LastModified   time.Time
+}
+
+func (s *SearchEntry) GetFormattedDate() string {
+	return s.LastModified.Format("2006-01-02 15:04")
 }
 
 // Types for sorting SearchEntry in ascending and descending order:
@@ -57,12 +94,12 @@ func (a byLastModifiedDescending) Less(i, j int) bool {
 
 type SearchResult struct {
 	sync.Mutex
-	results []SearchEntry
+	Results []SearchEntry
 }
 
 func NewSearchResult() *SearchResult {
 	return &SearchResult{
-		results: make([]SearchEntry, 0),
+		Results: make([]SearchEntry, 0),
 	}
 }
 
@@ -70,7 +107,7 @@ func NewSearchResult() *SearchResult {
 // concurrency safe
 func (s *SearchResult) AddEntry(name, path, searchedString string, lastModified time.Time) {
 	s.Lock()
-	s.results = append(s.results, SearchEntry{
+	s.Results = append(s.Results, SearchEntry{
 		Name:           name,
 		Path:           path,
 		SearchedString: searchedString,
@@ -80,33 +117,33 @@ func (s *SearchResult) AddEntry(name, path, searchedString string, lastModified 
 }
 
 func (s *SearchResult) GetEntry(id int) *SearchEntry {
-	if id > len(s.results) {
-		return &s.results[id]
+	if id > len(s.Results) {
+		return &s.Results[id]
 	} else {
 		return nil
 	}
 }
 
 func (s *SearchResult) SortByNameAscending() {
-	sort.Sort(byNameAscending(s.results))
+	sort.Sort(byNameAscending(s.Results))
 }
 
 func (s *SearchResult) SortByNameDescending() {
-	sort.Sort(byNameDescending(s.results))
+	sort.Sort(byNameDescending(s.Results))
 }
 
 func (s *SearchResult) SortByLastModifiedAscending() {
-	sort.Sort(byLastModifiedAscending(s.results))
+	sort.Sort(byLastModifiedAscending(s.Results))
 }
 
 func (s *SearchResult) SortByLastModifiedDescending() {
-	sort.Sort(byLastModifiedDescending(s.results))
+	sort.Sort(byLastModifiedDescending(s.Results))
 }
 
 func (s *SearchResult) SortByPathAscending() {
-	sort.Sort(byPathAscending(s.results))
+	sort.Sort(byPathAscending(s.Results))
 }
 
 func (s *SearchResult) SortByPathDescending() {
-	sort.Sort(byPathDescending(s.results))
+	sort.Sort(byPathDescending(s.Results))
 }
