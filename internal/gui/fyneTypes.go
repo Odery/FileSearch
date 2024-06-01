@@ -33,9 +33,13 @@ func (c *customLayout) Layout(elements []fyne.CanvasObject, _ fyne.Size) {
 	elements[4].Resize(fyne.NewSize(100, 36))
 	elements[4].Move(fyne.NewPos(75, 180))
 
+	// Progressbar
+	elements[5].Resize(fyne.NewSize(250, 36))
+	elements[5].Move(fyne.NewPos(10, 250))
+
 	// tableHeaders element layout
-	elements[5].Resize(fyne.NewSize(900, 450))
-	elements[5].Move(fyne.NewPos(300, 50))
+	elements[6].Resize(fyne.NewSize(900, 450))
+	elements[6].Move(fyne.NewPos(300, 50))
 }
 
 // TappableLabel is a custom Label that can be tapped
