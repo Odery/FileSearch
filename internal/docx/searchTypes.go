@@ -8,11 +8,14 @@ import (
 )
 
 type SearchProgress struct {
+	sync.Mutex
 	done  int
 	total int
 }
 
 func (s *SearchProgress) IsDone() bool {
+	s.Lock()
+	defer s.Unlock()
 	log.Printf("Done:%v , Total:%v ;\n", s.done, s.total)
 	log.Println(s.done == s.total)
 	if s.done == s.total {
@@ -23,14 +26,20 @@ func (s *SearchProgress) IsDone() bool {
 }
 
 func (s *SearchProgress) Done() {
+	s.Lock()
 	s.done += 1
+	s.Unlock()
 }
 
 func (s *SearchProgress) Add() {
+	s.Lock()
 	s.total += 1
+	s.Unlock()
 }
 
 func (s *SearchProgress) GetDone() int {
+	s.Lock()
+	defer s.Unlock()
 	return s.done
 }
 
