@@ -71,7 +71,6 @@ func processFile(filepath string, regex1, regex2 *regexp.Regexp, result *SearchR
 			text := fmt.Sprint(elem)
 			if regex1Bool && (regex2 == nil || regex2Bool) {
 				result.AddEntry(fileInfo.Name(), filepath, "text", fileInfo.ModTime())
-				log.Println("FOUND")
 				return
 			}
 

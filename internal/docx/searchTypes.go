@@ -1,7 +1,6 @@
 package docx
 
 import (
-	"log"
 	"sort"
 	"sync"
 	"time"
@@ -16,8 +15,6 @@ type SearchProgress struct {
 func (s *SearchProgress) IsDone() bool {
 	s.Lock()
 	defer s.Unlock()
-	log.Printf("Done:%v , Total:%v ;\n", s.done, s.total)
-	log.Println(s.done == s.total)
 	if s.done == s.total {
 		return true
 	} else {
