@@ -102,9 +102,9 @@ func compileRegex(pattern1, pattern2 string) (*regexp.Regexp, *regexp.Regexp, er
 	tempRegex := "(?i)"
 	for index, value := range wordsInPattern1 {
 		if index == len(wordsInPattern1)-1 {
-			tempRegex += value + `\w*`
+			tempRegex += value + `\p{L}*`
 		} else {
-			tempRegex += value + `\w*[[:blank:]]+`
+			tempRegex += value + `\p{L}*[[:blank:]]+`
 		}
 	}
 	r1, err := regexp.Compile(tempRegex)
