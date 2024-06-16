@@ -19,7 +19,7 @@ func DrawGUI() {
 	window := gui.NewWindow("File Search - Помічник")
 
 	// Set default settings, size and theme
-	window.Resize(fyne.NewSize(1200, 500))
+	window.Resize(fyne.NewSize(1170, 500))
 	window.CenterOnScreen()
 	window.SetFixedSize(true)
 
@@ -64,6 +64,27 @@ func DrawGUI() {
 	progressBar := widget.NewProgressBar()
 	progressBar.Hide()
 
+	// Create an info button
+	openConversionMenuButton := widget.NewButton("Важливо!", func() {
+		infoLabel := widget.NewLabel("Для нормальної роботи данної програми, рекомендуєця конвертувати \nваші файли .doc у сучасний формат .docx. Це забезпечить швидший пошук,\nкращу сумісність та підвищену безпеку ваших документів. Конвертація не \nзайме багато часу, але значно покращить ваш досвід користування \nпрограмою. Дякуємо за розуміння!")
+		convertButton := widget.NewButton("Конвертувати", func() {
+			log.Println("did zth")
+		})
+
+		dialogContent := container.NewVBox(
+			infoLabel,
+			widget.NewLabel("	      (Для конвертації потрібний Microsoft Office на комп'ютері!)"),
+			convertButton,
+			widget.NewLabel(""),
+		)
+
+		dialog.NewCustom("Важлива інформація!", "Закрити", dialogContent, window).Show()
+	})
+
+	// Create an entry for the found text
+	searchedText := widget.NewLabel("")
+	searchedText.Wrapping = fyne.TextWrapWord
+
 	// Create a table element
 	// probably the most difficult part to understand
 	table := widget.NewTableWithHeaders(
@@ -74,22 +95,30 @@ func DrawGUI() {
 			label.Wrapping = fyne.TextTruncate
 			// *! Only for Windows!
 			label.OnDoubleTapped = func() {
-				log.Println("[INFO]: Opening a file: ", result.Results[id.Row].Path)
 				cmd := exec.Command("rundll32", "url.dll,FileProtocolHandler", result.Results[id.Row].Path)
 				err := cmd.Start()
 				if err != nil {
 					log.Println("[ERROR]: When opening a file. ", err)
 				}
 			}
+			//label.OnTapped = func() {
+			//	searchedText.SetText(result.Results[id.Row].SearchedString)
+			//	searchedText.Refresh()
+			//}
 			if id.Col == 0 {
 				label.SetText(result.Results[id.Row].Name)
+				label.Alignment = fyne.TextAlignLeading
 			} else if id.Col == 1 {
 				label.SetText(result.Results[id.Row].GetFormattedDate())
+				label.Alignment = fyne.TextAlignCenter
 			} else if id.Col == 2 {
 				label.SetText(result.Results[id.Row].Path)
+				label.Alignment = fyne.TextAlignLeading
 			}
 		})
 
+	// Init sort status
+	sorted := new(sortStatus)
 	// Updating table headers and making them clickable
 	table.CreateHeader = func() fyne.CanvasObject {
 		return NewTappableLabel()
@@ -97,17 +126,48 @@ func DrawGUI() {
 
 	table.UpdateHeader = func(id widget.TableCellID, object fyne.CanvasObject) {
 		obj := object.(*TappableLabel)
-		obj.Wrapping = fyne.TextTruncate
 		obj.Alignment = fyne.TextAlignCenter
 		if id.Row == -1 && id.Col == 0 {
+			obj.Wrapping = fyne.TextTruncate
 			obj.SetText("Ім'я")
-			obj.OnDoubleTapped = func() {
-				result.SortByNameAscending()
+			obj.OnTapped = func() {
+				table.ScrollTo(id)
+				if !sorted.nameAsc {
+					result.SortByNameAscending()
+					sorted.nameAsc = true
+				} else if sorted.nameAsc {
+					result.SortByNameDescending()
+					sorted.nameAsc = false
+				}
+				table.Refresh()
 			}
 		} else if id.Row == -1 && id.Col == 1 {
+			obj.Wrapping = fyne.TextTruncate
 			obj.SetText("Дата змінення")
+			obj.OnTapped = func() {
+				table.ScrollTo(id)
+				if !sorted.dateAsc {
+					result.SortByLastModifiedAscending()
+					sorted.dateAsc = true
+				} else if sorted.dateAsc {
+					result.SortByLastModifiedDescending()
+					sorted.dateAsc = false
+				}
+				table.Refresh()
+			}
 		} else if id.Row == -1 && id.Col == 2 {
 			obj.SetText("Шлях до файлу")
+			obj.OnTapped = func() {
+				table.ScrollTo(id)
+				if !sorted.pathAsc {
+					result.SortByPathAscending()
+					sorted.pathAsc = true
+				} else if sorted.pathAsc {
+					result.SortByPathDescending()
+					sorted.pathAsc = false
+				}
+				table.Refresh()
+			}
 		}
 
 		if id.Col == -1 {
@@ -120,7 +180,7 @@ func DrawGUI() {
 	// Adjust table default Column size
 	table.SetColumnWidth(0, 300)
 	table.SetColumnWidth(1, 148)
-	table.SetColumnWidth(2, 300)
+	table.SetColumnWidth(2, 410)
 
 	// Create a search button
 	searchBtn := widget.NewButton("Шукати", func() {
@@ -163,6 +223,8 @@ func DrawGUI() {
 		searchBtn,
 		progressBar,
 		table,
+		openConversionMenuButton,
+		//container.NewScroll(searchedText),
 	)
 
 	// Set the window content and show the window
