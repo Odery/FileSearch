@@ -65,17 +65,19 @@ func processFile(filepath string, regex1, regex2 *regexp.Regexp, result *SearchR
 	}
 
 	regex1Bool, regex2Bool := false, false
+	var searchedString string
 	for _, element := range doc.Document.Body.Items {
 		switch elem := element.(type) {
 		case *docx.Paragraph, *docx.Table:
 			text := fmt.Sprint(elem)
 			if regex1Bool && (regex2 == nil || regex2Bool) {
-				result.AddEntry(fileInfo.Name(), filepath, "text", fileInfo.ModTime())
+				result.AddEntry(fileInfo.Name(), filepath, searchedString, fileInfo.ModTime())
 				return
 			}
 
 			if regex1Bool == false {
 				regex1Bool = regex1.MatchString(text)
+				searchedString = text
 			}
 			if regex2 != nil {
 				regex2Bool = regex2.MatchString(text)
